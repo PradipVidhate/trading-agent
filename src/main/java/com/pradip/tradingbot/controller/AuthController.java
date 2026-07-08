@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.pradip.tradingbot.dto.AccessTokenData;
 import com.pradip.tradingbot.dto.UserProfile;
 import com.pradip.tradingbot.service.AuthService;
 
@@ -23,25 +24,47 @@ public class AuthController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-
         response.sendRedirect(authService.getLoginUrl());
     }
-    
 
     @GetMapping("/callback")
     @ResponseBody
-    public String callback(@RequestParam("request_token") String requestToken) {
+    public String callback(@RequestParam String request_token) {
 
-        return authService.authenticate(requestToken);
+        AccessTokenData data =
+                authService.generateAccessToken(request_token);
 
+        return """
+                Login Successful
+
+                User : %s
+
+                Access Token :
+                %s
+                """.formatted(
+                data.getUserName(),
+                data.getAccessToken());
     }
-    
-    @GetMapping("/profile")
+
+    @GetMapping("/logout")
     @ResponseBody
-    public UserProfile profile() {
+    public String logout() {
 
-        return authService.getProfile();
+        authService.logout();
 
+        return "Logged Out Successfully";
     }
-    
+
+    @GetMapping("/session")
+    @ResponseBody
+    public Object session() {
+
+        AccessTokenData data = authService.getCurrentSession();
+
+        if (data == null) {
+            return "No Active Session";
+        }
+
+        return data;
+    }
 }

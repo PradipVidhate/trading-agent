@@ -5,48 +5,82 @@ import org.springframework.stereotype.Service;
 import com.pradip.tradingbot.client.KiteClient;
 import com.pradip.tradingbot.dto.AccessTokenData;
 import com.pradip.tradingbot.dto.ApiResponse;
-import com.pradip.tradingbot.dto.UserProfile;
-import com.pradip.tradingbot.session.SessionManager;
 
 @Service
 public class AuthService {
 
     private final KiteClient kiteClient;
-    private final SessionManager sessionManager;
+    private final SessionService sessionService;
 
     public AuthService(KiteClient kiteClient,
-                       SessionManager sessionManager) {
+                       SessionService sessionService) {
+
         this.kiteClient = kiteClient;
-        this.sessionManager = sessionManager;
+        this.sessionService = sessionService;
     }
 
+    /**
+     * Returns Zerodha Login URL
+     */
     public String getLoginUrl() {
         return kiteClient.getLoginUrl();
     }
 
-    public String authenticate(String requestToken) {
+    /**
+     * Exchanges request_token for access_token
+     */
+    public AccessTokenData generateAccessToken(String requestToken) {
 
         ApiResponse<AccessTokenData> response =
                 kiteClient.generateAccessToken(requestToken);
 
+        if (response == null) {
+            throw new RuntimeException("No response received from Zerodha.");
+        }
+
+        if (!"success".equalsIgnoreCase(response.getStatus())) {
+            throw new RuntimeException(response.getMessage());
+        }
+
         AccessTokenData data = response.getData();
 
-        sessionManager.setAccessToken(data.getAccessToken());
-        sessionManager.setPublicToken(data.getPublicToken());
+        sessionService.saveSession(
+                data.getAccessToken(),
+                data.getUserId(),
+                data.getUserName());
 
-        return """
-        		Login Successful
-
-        		Welcome %s
-
-        		Authentication completed successfully.
-        		""".formatted(data.getUserName());
+        return data;
     }
-    
-    public UserProfile getProfile() {
 
-        return kiteClient.getProfile().getData();
-
+    /**
+     * Logout
+     */
+    public void logout() {
+        sessionService.clearSession();
     }
-    
+
+    /**
+     * Returns current logged in user
+     */
+    public AccessTokenData getCurrentSession() {
+
+        if (!sessionService.isLoggedIn()) {
+            return null;
+        }
+
+        AccessTokenData data = new AccessTokenData();
+
+        data.setAccessToken(sessionService.getAccessToken());
+        data.setUserId(sessionService.getUserId());
+        data.setUserName(sessionService.getUserName());
+
+        return data;
+    }
+
+    /**
+     * Check login status
+     */
+    public boolean isLoggedIn() {
+        return sessionService.isLoggedIn();
+    }
 }

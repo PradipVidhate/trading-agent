@@ -20,4 +20,9 @@ public class ApiResponse<T> {
     public void setData(T data) {
         this.data = data;
     }
+
+	public String getMessage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
