@@ -1,28 +1,62 @@
 package com.pradip.tradingbot.service;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.pradip.tradingbot.client.KiteClient;
 import com.pradip.tradingbot.model.Instrument;
+import com.pradip.tradingbot.util.InstrumentParser;
 
 @Service
 public class InstrumentService {
 
+    private final KiteClient kiteClient;
+    private final SessionService sessionService;
+
+    // In-memory cache
     private final List<Instrument> instruments = new ArrayList<>();
 
-    public void save(List<Instrument> list) {
+    public InstrumentService(KiteClient kiteClient,
+                             SessionService sessionService) {
+
+        this.kiteClient = kiteClient;
+        this.sessionService = sessionService;
+    }
+
+    /**
+     * Download instrument master from Zerodha
+     */
+    public int downloadInstrumentMaster() throws Exception {
+
+        if (!sessionService.isLoggedIn()) {
+            throw new RuntimeException("Please login first.");
+        }
+
+        String csv = kiteClient.downloadInstrumentCsv(
+                sessionService.getAccessToken());
+
+        List<Instrument> downloaded =
+                InstrumentParser.parse(new StringReader(csv));
 
         instruments.clear();
+        instruments.addAll(downloaded);
 
-        instruments.addAll(list);
+        return instruments.size();
     }
 
-    public List<Instrument> getAll() {
-        return instruments;
+    /**
+     * Total instruments loaded
+     */
+    public int count() {
+        return instruments.size();
     }
 
+    /**
+     * Search by trading symbol
+     */
     public Instrument findByTradingSymbol(String tradingSymbol) {
 
         return instruments.stream()
@@ -32,8 +66,11 @@ public class InstrumentService {
                 .orElse(null);
     }
 
-    public int count() {
-        return instruments.size();
+    /**
+     * Return all instruments
+     */
+    public List<Instrument> getAll() {
+        return instruments;
     }
 
 }

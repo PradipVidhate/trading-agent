@@ -78,4 +78,16 @@ public class KiteClient {
                 .body(new org.springframework.core.ParameterizedTypeReference<ApiResponse<UserProfile>>() {});
     }
     
+    public String downloadInstrumentCsv(String accessToken) {
+
+        return restClient.get()
+                .uri("https://api.kite.trade/instruments")
+                .header("Authorization", "token "
+                        + kiteProperties.getApiKey()
+                        + ":" + accessToken)
+                .retrieve()
+                .body(String.class);
+    }
+    
+    
 }
