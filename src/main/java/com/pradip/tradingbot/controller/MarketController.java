@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pradip.tradingbot.dto.ApiResult;
 import com.pradip.tradingbot.model.Instrument;
 import com.pradip.tradingbot.service.InstrumentService;
+import java.util.List;
+import com.pradip.tradingbot.model.Instrument;
 
 @RestController
 @RequestMapping("/market")
@@ -51,6 +53,14 @@ public class MarketController {
         return ApiResult.success(
                 "Instrument Found",
                 instrument);
+    }
+    
+    @GetMapping("/search-all")
+    public ApiResult<List<Instrument>> searchAll(@RequestParam String symbol) {
+
+        return ApiResult.success(
+                "Matching Instruments",
+                instrumentService.searchBySymbol(symbol));
     }
 
 }

@@ -1,6 +1,12 @@
 package com.pradip.tradingbot.client;
 
 import org.springframework.http.MediaType;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import org.springframework.http.HttpHeaders;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -89,5 +95,41 @@ public class KiteClient {
                 .body(String.class);
     }
     
+    public JsonNode getHistoricalData(long instrumentToken,
+            String interval,
+            LocalDateTime from,
+            LocalDateTime to,
+            String accessToken) {
+
+DateTimeFormatter formatter =
+DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+return restClient.get()
+
+.uri(uriBuilder -> uriBuilder
+
+.scheme("https")
+.host("api.kite.trade")
+.path("/instruments/historical/{token}/{interval}")
+
+.queryParam("from", from.format(formatter))
+.queryParam("to", to.format(formatter))
+.queryParam("continuous", 0)
+.queryParam("oi", 0)
+
+.build(instrumentToken, interval))
+
+.header(HttpHeaders.AUTHORIZATION,
+"token "
+      + kiteProperties.getApiKey()
+      + ":"
+      + accessToken)
+
+.header("X-Kite-Version", "3")
+
+.retrieve()
+
+.body(JsonNode.class);
+}
     
 }

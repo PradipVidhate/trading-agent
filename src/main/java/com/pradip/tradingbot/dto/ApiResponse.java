@@ -2,15 +2,42 @@ package com.pradip.tradingbot.dto;
 
 public class ApiResponse<T> {
 
+    private boolean success;
+    private String message;
     private String status;
     private T data;
 
-    public String getStatus() {
-        return status;
+    public ApiResponse() {
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public ApiResponse(boolean success, String message, T data) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
+    }
+
+    public static <T> ApiResponse<T> success(String message, T data) {
+        return new ApiResponse<>(true, message, data);
+    }
+
+    public static <T> ApiResponse<T> failure(String message) {
+        return new ApiResponse<>(false, message, null);
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public T getData() {
@@ -20,9 +47,12 @@ public class ApiResponse<T> {
     public void setData(T data) {
         this.data = data;
     }
+    
+    public String getStatus() {
+        return status;
+    }
 
-	public String getMessage() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
