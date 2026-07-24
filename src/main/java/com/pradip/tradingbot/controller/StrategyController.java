@@ -113,6 +113,17 @@ public class StrategyController {
         KiteAlertSetupResult result =
                 kiteAlertService.createNiftySupportResistanceAlerts(interval, days);
 
-        return ApiResponse.success("Kite alerts created", result);
+        return ApiResponse.success("Kite alerts created or updated", result);
+    }
+
+    @GetMapping("/kite-alerts/create")
+    public ApiResponse<KiteAlertSetupResult> createKiteAlertsFromBrowser(
+            @RequestParam(defaultValue = "5minute") String interval,
+            @RequestParam(defaultValue = "5") int days) {
+
+        KiteAlertSetupResult result =
+                kiteAlertService.createNiftySupportResistanceAlerts(interval, days);
+
+        return ApiResponse.success("Kite alerts created or updated", result);
     }
 }

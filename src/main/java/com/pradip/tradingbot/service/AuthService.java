@@ -5,18 +5,22 @@ import org.springframework.stereotype.Service;
 import com.pradip.tradingbot.client.KiteClient;
 import com.pradip.tradingbot.dto.AccessTokenData;
 import com.pradip.tradingbot.dto.ApiResponse;
+import com.pradip.tradingbot.dto.LoginResult;
 
 @Service
 public class AuthService {
 
     private final KiteClient kiteClient;
     private final SessionService sessionService;
+    private final InstrumentService instrumentService;
 
     public AuthService(KiteClient kiteClient,
-                       SessionService sessionService) {
+                       SessionService sessionService,
+                       InstrumentService instrumentService) {
 
         this.kiteClient = kiteClient;
         this.sessionService = sessionService;
+        this.instrumentService = instrumentService;
     }
 
     /**
@@ -50,6 +54,27 @@ public class AuthService {
                 data.getUserName());
 
         return data;
+    }
+
+    public LoginResult login(String requestToken) {
+
+        AccessTokenData data = generateAccessToken(requestToken);
+
+        try {
+            LoginResult result = new LoginResult();
+
+            result.setSession(data);
+            result.setInstrumentCount(
+                    instrumentService.downloadInstrumentMaster());
+
+            return result;
+
+        } catch (Exception ex) {
+            throw new RuntimeException(
+                    "Login succeeded, but instrument download failed: "
+                            + ex.getMessage(),
+                    ex);
+        }
     }
 
     /**

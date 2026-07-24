@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.pradip.tradingbot.dto.ScheduledSignalStatus;
 import com.pradip.tradingbot.dto.TradingSignal;
+import com.pradip.tradingbot.service.KiteAlertService;
 import com.pradip.tradingbot.strategy.SignalGeneratorService;
 
 @Component
@@ -22,11 +23,14 @@ public class NiftySignalScheduler {
     private static final int DAYS = 5;
 
     private final SignalGeneratorService signalGeneratorService;
+    private final KiteAlertService kiteAlertService;
     private final ScheduledSignalStatus status = new ScheduledSignalStatus();
 
-    public NiftySignalScheduler(SignalGeneratorService signalGeneratorService) {
+    public NiftySignalScheduler(SignalGeneratorService signalGeneratorService,
+                                KiteAlertService kiteAlertService) {
 
         this.signalGeneratorService = signalGeneratorService;
+        this.kiteAlertService = kiteAlertService;
         this.status.setEnabled(true);
     }
 
@@ -48,6 +52,8 @@ public class NiftySignalScheduler {
             log.info("Scheduled NIFTY signal generated: {} at close {}",
                     signal.getSignal(),
                     signal.getLastClose());
+
+            kiteAlertService.createNiftySupportResistanceAlerts(INTERVAL, DAYS);
 
         } catch (RuntimeException ex) {
             status.setLastRunAt(runAt);

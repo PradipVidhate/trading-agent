@@ -9,6 +9,8 @@ public class KiteAlertSetupResult {
 
     private SupportResistanceResult levels;
     private List<JsonNode> createdAlerts = new ArrayList<>();
+    private List<JsonNode> updatedAlerts = new ArrayList<>();
+    private List<String> errors = new ArrayList<>();
 
     public SupportResistanceResult getLevels() {
         return levels;
@@ -24,5 +26,21 @@ public class KiteAlertSetupResult {
 
     public void setCreatedAlerts(List<JsonNode> createdAlerts) {
         this.createdAlerts = createdAlerts;
+    }
+
+    public List<JsonNode> getUpdatedAlerts() {
+        return updatedAlerts;
+    }
+
+    public void setUpdatedAlerts(List<JsonNode> updatedAlerts) {
+        this.updatedAlerts = updatedAlerts;
+    }
+
+    public List<String> getErrors() {
+        return errors;
+    }
+
+    public void setErrors(List<String> errors) {
+        this.errors = errors;
     }
 }

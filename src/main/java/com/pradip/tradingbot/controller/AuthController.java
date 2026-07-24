@@ -6,7 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.pradip.tradingbot.dto.AccessTokenData;
-import com.pradip.tradingbot.dto.UserProfile;
+import com.pradip.tradingbot.dto.LoginResult;
 import com.pradip.tradingbot.service.AuthService;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,19 +31,20 @@ public class AuthController {
     @ResponseBody
     public String callback(@RequestParam String request_token) {
 
-        AccessTokenData data =
-                authService.generateAccessToken(request_token);
+        LoginResult result =
+                authService.login(request_token);
 
         return """
                 Login Successful
 
                 User : %s
 
-                Access Token :
-                %s
+                Instruments Loaded : %d
+
+                Automated setup is ready for NIFTY signal generation and Kite alert updates.
                 """.formatted(
-                data.getUserName(),
-                data.getAccessToken());
+                result.getSession().getUserName(),
+                result.getInstrumentCount());
     }
 
     @GetMapping("/logout")
