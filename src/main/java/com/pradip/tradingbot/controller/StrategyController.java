@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pradip.tradingbot.dto.ApiResponse;
+import com.pradip.tradingbot.dto.ScheduledSignalStatus;
 import com.pradip.tradingbot.dto.SignalScanResult;
 import com.pradip.tradingbot.dto.SupportResistanceResult;
 import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
+import com.pradip.tradingbot.scheduler.NiftySignalScheduler;
 import com.pradip.tradingbot.service.HistoricalDataService;
 import com.pradip.tradingbot.strategy.SignalGeneratorService;
 import com.pradip.tradingbot.strategy.SupportResistanceService;
@@ -24,14 +26,17 @@ public class StrategyController {
     private final HistoricalDataService historicalDataService;
     private final SupportResistanceService supportResistanceService;
     private final SignalGeneratorService signalGeneratorService;
+    private final NiftySignalScheduler niftySignalScheduler;
 
     public StrategyController(HistoricalDataService historicalDataService,
                               SupportResistanceService supportResistanceService,
-                              SignalGeneratorService signalGeneratorService) {
+                              SignalGeneratorService signalGeneratorService,
+                              NiftySignalScheduler niftySignalScheduler) {
 
         this.historicalDataService = historicalDataService;
         this.supportResistanceService = supportResistanceService;
         this.signalGeneratorService = signalGeneratorService;
+        this.niftySignalScheduler = niftySignalScheduler;
     }
 
     @GetMapping("/levels")
@@ -84,5 +89,13 @@ public class StrategyController {
                 signalGeneratorService.scanSignals(symbolList, interval, days);
 
         return ApiResponse.success("Trading signals", result);
+    }
+
+    @GetMapping("/scheduled-signal")
+    public ApiResponse<ScheduledSignalStatus> scheduledSignal() {
+
+        return ApiResponse.success(
+                "Latest scheduled NIFTY signal",
+                niftySignalScheduler.getStatus());
     }
 }

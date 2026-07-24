@@ -13,6 +13,9 @@ public class TradingSignal {
     private double support;
     private double resistance;
     private double pivot;
+    private double stopLoss;
+    private double target;
+    private double riskRewardRatio;
     private double proximityPercent;
 
     public String getSymbol() {
@@ -85,6 +88,30 @@ public class TradingSignal {
 
     public void setPivot(double pivot) {
         this.pivot = pivot;
+    }
+
+    public double getStopLoss() {
+        return stopLoss;
+    }
+
+    public void setStopLoss(double stopLoss) {
+        this.stopLoss = stopLoss;
+    }
+
+    public double getTarget() {
+        return target;
+    }
+
+    public void setTarget(double target) {
+        this.target = target;
+    }
+
+    public double getRiskRewardRatio() {
+        return riskRewardRatio;
+    }
+
+    public void setRiskRewardRatio(double riskRewardRatio) {
+        this.riskRewardRatio = riskRewardRatio;
     }
 
     public double getProximityPercent() {

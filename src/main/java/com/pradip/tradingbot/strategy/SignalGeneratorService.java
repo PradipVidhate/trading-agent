@@ -16,6 +16,7 @@ import com.pradip.tradingbot.service.InstrumentService;
 public class SignalGeneratorService {
 
     private static final double DEFAULT_PROXIMITY_PERCENT = 0.30;
+    private static final double STOP_LOSS_BUFFER_PERCENT = 0.10;
 
     private final HistoricalDataService historicalDataService;
     private final InstrumentService instrumentService;
@@ -82,6 +83,7 @@ public class SignalGeneratorService {
         tradingSignal.setSupport(levels.getSupport());
         tradingSignal.setResistance(levels.getResistance());
         tradingSignal.setPivot(levels.getPivot());
+        applyRiskLevels(tradingSignal);
         tradingSignal.setProximityPercent(DEFAULT_PROXIMITY_PERCENT);
 
         return tradingSignal;
@@ -128,5 +130,50 @@ public class SignalGeneratorService {
     private double round(double value) {
 
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private void applyRiskLevels(TradingSignal tradingSignal) {
+
+        double stopLoss = 0;
+        double target = 0;
+
+        if ("BUY".equals(tradingSignal.getSignal())) {
+            stopLoss = tradingSignal.getSupport()
+                    * (1 - STOP_LOSS_BUFFER_PERCENT / 100);
+            target = tradingSignal.getResistance();
+
+        } else if ("SELL".equals(tradingSignal.getSignal())) {
+            stopLoss = tradingSignal.getResistance()
+                    * (1 + STOP_LOSS_BUFFER_PERCENT / 100);
+            target = tradingSignal.getSupport();
+        }
+
+        tradingSignal.setStopLoss(round(stopLoss));
+        tradingSignal.setTarget(round(target));
+        tradingSignal.setRiskRewardRatio(
+                calculateRiskRewardRatio(
+                        tradingSignal.getSignal(),
+                        tradingSignal.getLastClose(),
+                        tradingSignal.getStopLoss(),
+                        tradingSignal.getTarget()));
+    }
+
+    private double calculateRiskRewardRatio(String signal,
+                                            double entry,
+                                            double stopLoss,
+                                            double target) {
+
+        if ("NO_TRADE".equals(signal) || stopLoss == 0 || target == 0) {
+            return 0;
+        }
+
+        double risk = Math.abs(entry - stopLoss);
+        double reward = Math.abs(target - entry);
+
+        if (risk == 0) {
+            return 0;
+        }
+
+        return round(reward / risk);
     }
 }
