@@ -94,6 +94,36 @@ public class KiteClient {
                 .retrieve()
                 .body(String.class);
     }
+
+    public ApiResponse<JsonNode> createSimpleAlert(String accessToken,
+                                                   String name,
+                                                   String operator,
+                                                   double rhsConstant) {
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+
+        body.add("name", name);
+        body.add("lhs_exchange", "INDICES");
+        body.add("lhs_tradingsymbol", "NIFTY 50");
+        body.add("lhs_attribute", "LastTradedPrice");
+        body.add("operator", operator);
+        body.add("rhs_type", "constant");
+        body.add("type", "simple");
+        body.add("rhs_constant", String.valueOf(rhsConstant));
+
+        return restClient.post()
+                .uri(ApiConstants.BASE_URL + ApiConstants.ALERTS)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .header(HttpHeaders.AUTHORIZATION,
+                        "token "
+                                + kiteProperties.getApiKey()
+                                + ":"
+                                + accessToken)
+                .header("X-Kite-Version", "3")
+                .body(body)
+                .retrieve()
+                .body(new org.springframework.core.ParameterizedTypeReference<ApiResponse<JsonNode>>() {});
+    }
     
     public JsonNode getHistoricalData(long instrumentToken,
             String interval,

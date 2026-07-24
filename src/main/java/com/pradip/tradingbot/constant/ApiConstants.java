@@ -14,4 +14,6 @@ public final class ApiConstants {
     public static final String QUOTES = "/quote";
 
     public static final String HISTORICAL = "/instruments/historical";
+
+    public static final String ALERTS = "/alerts";
 }

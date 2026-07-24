@@ -4,11 +4,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pradip.tradingbot.dto.ApiResponse;
+import com.pradip.tradingbot.dto.KiteAlertSetupResult;
 import com.pradip.tradingbot.dto.ScheduledSignalStatus;
 import com.pradip.tradingbot.dto.SignalScanResult;
 import com.pradip.tradingbot.dto.SupportResistanceResult;
@@ -16,6 +18,7 @@ import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
 import com.pradip.tradingbot.scheduler.NiftySignalScheduler;
 import com.pradip.tradingbot.service.HistoricalDataService;
+import com.pradip.tradingbot.service.KiteAlertService;
 import com.pradip.tradingbot.strategy.SignalGeneratorService;
 import com.pradip.tradingbot.strategy.SupportResistanceService;
 
@@ -27,16 +30,19 @@ public class StrategyController {
     private final SupportResistanceService supportResistanceService;
     private final SignalGeneratorService signalGeneratorService;
     private final NiftySignalScheduler niftySignalScheduler;
+    private final KiteAlertService kiteAlertService;
 
     public StrategyController(HistoricalDataService historicalDataService,
                               SupportResistanceService supportResistanceService,
                               SignalGeneratorService signalGeneratorService,
-                              NiftySignalScheduler niftySignalScheduler) {
+                              NiftySignalScheduler niftySignalScheduler,
+                              KiteAlertService kiteAlertService) {
 
         this.historicalDataService = historicalDataService;
         this.supportResistanceService = supportResistanceService;
         this.signalGeneratorService = signalGeneratorService;
         this.niftySignalScheduler = niftySignalScheduler;
+        this.kiteAlertService = kiteAlertService;
     }
 
     @GetMapping("/levels")
@@ -97,5 +103,16 @@ public class StrategyController {
         return ApiResponse.success(
                 "Latest scheduled NIFTY signal",
                 niftySignalScheduler.getStatus());
+    }
+
+    @PostMapping("/kite-alerts")
+    public ApiResponse<KiteAlertSetupResult> createKiteAlerts(
+            @RequestParam(defaultValue = "5minute") String interval,
+            @RequestParam(defaultValue = "5") int days) {
+
+        KiteAlertSetupResult result =
+                kiteAlertService.createNiftySupportResistanceAlerts(interval, days);
+
+        return ApiResponse.success("Kite alerts created", result);
     }
 }
