@@ -28,12 +28,22 @@ public class AuthController {
     }
 
     @GetMapping("/callback")
-    public String callback(@RequestParam String request_token) {
+    public String callback(@RequestParam(value = "request_token", required = false) String requestToken,
+                          @RequestParam(value = "status", required = false) String status,
+                          @RequestParam(value = "action", required = false) String action,
+                          @RequestParam(value = "type", required = false) String type) {
 
-        LoginResult result =
-                authService.login(request_token);
+        if (requestToken == null || requestToken.isBlank()) {
+            return "redirect:http://localhost:8081/ui";
+        }
 
-        return "redirect:/ui?login=success";
+        LoginResult result = authService.login(requestToken);
+
+        if (result == null || result.getSession() == null) {
+            return "redirect:http://localhost:8081/ui?error=login";
+        }
+
+        return "redirect:http://localhost:8081/ui?login=success";
     }
 
     @GetMapping("/logout")
