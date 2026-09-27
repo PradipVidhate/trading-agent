@@ -78,6 +78,8 @@
             </div>
         </div>
 
+        <div id="loginBanner" class="result-box" style="display:none; margin-bottom:18px;"></div>
+
         <div class="grid">
             <div class="card">
                 <h3>Session</h3>
@@ -226,11 +228,29 @@
             return JSON.stringify(value, null, 2);
         }
 
+        function showBanner(message, type = 'info') {
+            const banner = document.getElementById('loginBanner');
+            banner.style.display = 'block';
+            banner.style.borderColor = type === 'error' ? '#f87171' : '#60a5fa';
+            banner.style.color = type === 'error' ? '#fecaca' : '#dfe7ff';
+            banner.textContent = message;
+        }
+
         function renderSession(data) {
             const isLoggedIn = data && data !== 'No Active Session';
             document.getElementById('sessionState').textContent = isLoggedIn ? 'Logged In' : 'Logged Out';
             document.getElementById('sessionUser').textContent = isLoggedIn ? (data.userName || '-') : '-';
             document.getElementById('sessionToken').textContent = isLoggedIn && data.accessToken ? data.accessToken.slice(0, 18) + '...' : '-';
+
+            const loginBanner = document.getElementById('loginBanner');
+            if (!isLoggedIn) {
+                loginBanner.style.display = 'block';
+                loginBanner.textContent = 'Please login with Kite to enable all trading features.';
+                loginBanner.style.borderColor = '#fbbf24';
+                loginBanner.style.color = '#fef3c7';
+            } else {
+                loginBanner.style.display = 'none';
+            }
         }
 
         async function loadSession() {
@@ -264,6 +284,14 @@
             const text = await response.text();
             let parsed;
             try { parsed = JSON.parse(text); } catch { parsed = text; }
+
+            if (!response.ok) {
+                const message = typeof parsed === 'string' ? parsed : (parsed && parsed.message ? parsed.message : 'Request failed');
+                document.getElementById(targetId).textContent = message;
+                showBanner(message, 'error');
+                return parsed;
+            }
+
             document.getElementById(targetId).textContent = typeof parsed === 'string' ? parsed : jsonToText(parsed);
             return parsed;
         }
@@ -274,6 +302,7 @@
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await fetch(api.logout);
+            showBanner('Logged out successfully. Please login again to continue.', 'info');
             await loadSession();
             await loadCount();
         });
@@ -336,6 +365,11 @@
             const url = `${api.alerts}?interval=${encodeURIComponent(interval)}&days=${days}`;
             await doRequest(url, 'alertResult', 'POST');
         });
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('login') === 'success') {
+            showBanner('Login successful. You can now use the dashboard features.', 'info');
+        }
 
         loadSession();
         loadCount();

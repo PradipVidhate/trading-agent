@@ -28,23 +28,12 @@ public class AuthController {
     }
 
     @GetMapping("/callback")
-    @ResponseBody
     public String callback(@RequestParam String request_token) {
 
         LoginResult result =
                 authService.login(request_token);
 
-        return """
-                Login Successful
-
-                User : %s
-
-                Instruments Loaded : %d
-
-                Automated setup is ready for NIFTY signal generation and Kite alert updates.
-                """.formatted(
-                result.getSession().getUserName(),
-                result.getInstrumentCount());
+        return "redirect:/ui?login=success";
     }
 
     @GetMapping("/logout")
