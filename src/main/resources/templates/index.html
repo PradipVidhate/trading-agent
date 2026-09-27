@@ -297,7 +297,7 @@
         }
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            window.location.href = api.login;
+            window.open(api.login, '_blank', 'noopener,noreferrer');
         });
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {

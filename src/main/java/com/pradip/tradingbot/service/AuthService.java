@@ -6,20 +6,24 @@ import com.pradip.tradingbot.client.KiteClient;
 import com.pradip.tradingbot.dto.AccessTokenData;
 import com.pradip.tradingbot.dto.ApiResponse;
 import com.pradip.tradingbot.dto.LoginResult;
+import com.pradip.tradingbot.session.SessionManager;
 
 @Service
 public class AuthService {
 
     private final KiteClient kiteClient;
     private final SessionService sessionService;
+    private final SessionManager sessionManager;
     private final InstrumentService instrumentService;
 
     public AuthService(KiteClient kiteClient,
                        SessionService sessionService,
+                       SessionManager sessionManager,
                        InstrumentService instrumentService) {
 
         this.kiteClient = kiteClient;
         this.sessionService = sessionService;
+        this.sessionManager = sessionManager;
         this.instrumentService = instrumentService;
     }
 
@@ -48,10 +52,15 @@ public class AuthService {
 
         AccessTokenData data = response.getData();
 
+        if (data == null) {
+            throw new RuntimeException("Zerodha login response did not include session data.");
+        }
+
         sessionService.saveSession(
                 data.getAccessToken(),
                 data.getUserId(),
                 data.getUserName());
+        sessionManager.setAccessToken(data.getAccessToken());
 
         return data;
     }
@@ -82,6 +91,7 @@ public class AuthService {
      */
     public void logout() {
         sessionService.clearSession();
+        sessionManager.clear();
     }
 
     /**

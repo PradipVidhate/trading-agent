@@ -24,7 +24,8 @@ public class AuthController {
 
     @GetMapping("/login")
     public void login(HttpServletResponse response) throws IOException {
-        response.sendRedirect(authService.getLoginUrl());
+        String loginUrl = authService.getLoginUrl();
+        response.sendRedirect(loginUrl);
     }
 
     @GetMapping("/callback")
