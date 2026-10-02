@@ -6,7 +6,9 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -113,15 +115,11 @@ public class SignalGeneratorService {
                 indexSymbol, INTRADAY_INTERVAL, candles, dayCandles, previousDayTrend);
 
         List<TradingSignal> signals = new ArrayList<>();
-        String lastActionableSignal = "NO_TRADE";
+        Set<String> emittedSignalsForDay = new HashSet<>();
         for (TradingSignal signal : evaluatedSignals) {
-            if ("NO_TRADE".equals(signal.getSignal())) {
-                lastActionableSignal = "NO_TRADE";
-            } else {
-                if (!signal.getSignal().equals(lastActionableSignal)) {
-                    signals.add(signal);
-                }
-                lastActionableSignal = signal.getSignal();
+            if (!"NO_TRADE".equals(signal.getSignal())
+                    && emittedSignalsForDay.add(signal.getSignal())) {
+                signals.add(signal);
             }
         }
 

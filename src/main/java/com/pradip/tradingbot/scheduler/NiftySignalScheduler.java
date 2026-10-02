@@ -3,6 +3,8 @@ package com.pradip.tradingbot.scheduler;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +32,8 @@ public class NiftySignalScheduler {
     private final KiteAlertService kiteAlertService;
     private final DailySignalHistoryService dailySignalHistoryService;
     private final ScheduledSignalStatus status = new ScheduledSignalStatus();
-    private String lastPublishedSignal;
+    private LocalDate signalLimitDate;
+    private final Set<String> publishedSignalsToday = new HashSet<>();
     private LocalDate lastAlertSetupDate;
 
     public NiftySignalScheduler(SignalGeneratorService signalGeneratorService,
@@ -51,6 +54,7 @@ public class NiftySignalScheduler {
         LocalDateTime runAt = LocalDateTime.now();
 
         try {
+            resetDailySignalLimitIfNeeded();
             TradingSignal signal =
                     signalGeneratorService.generateScheduledSignal(SYMBOL, INTERVAL, DAYS);
 
@@ -59,17 +63,15 @@ public class NiftySignalScheduler {
             refreshAlertsOncePerDay();
 
                 if ("NO_TRADE".equals(signal.getSignal())) {
-                lastPublishedSignal = null;
                 return;
                 }
 
-                if (signal.getSignal().equals(lastPublishedSignal)) {
-                log.debug("Suppressing repeated NIFTY {} signal at close {}",
+                if (!publishedSignalsToday.add(signal.getSignal())) {
+                log.debug("Suppressing additional NIFTY {} signal after today's entry at close {}",
                     signal.getSignal(), signal.getLastClose());
                 return;
                 }
 
-                lastPublishedSignal = signal.getSignal();
                 status.setLastSignal(signal);
                 dailySignalHistoryService.record(signal);
                 log.info("Scheduled NIFTY {} signal at close {}",
@@ -80,6 +82,14 @@ public class NiftySignalScheduler {
             status.setLastError(ex.getMessage());
 
             log.warn("Scheduled NIFTY signal generation skipped: {}", ex.getMessage());
+        }
+    }
+
+    private void resetDailySignalLimitIfNeeded() {
+        LocalDate today = LocalDate.now(MARKET_ZONE);
+        if (!today.equals(signalLimitDate)) {
+            publishedSignalsToday.clear();
+            signalLimitDate = today;
         }
     }
 

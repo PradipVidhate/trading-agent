@@ -26,7 +26,7 @@ import com.pradip.tradingbot.service.InstrumentService;
 class SignalGeneratorServiceDayTest {
 
     @Test
-        void emitsOneSignalPerContinuousSupportOrResistanceVisit() {
+        void emitsEachOptionSideOnlyOnceForTheSelectedDay() {
         LocalDate date = LocalDate.of(2026, 10, 1);
         HistoricalDataService historicalDataService = mock(HistoricalDataService.class);
         InstrumentService instrumentService = mock(InstrumentService.class);
@@ -64,12 +64,11 @@ class SignalGeneratorServiceDayTest {
 
         List<SignalOutcome> signals = service.generateSignalsForDay("NIFTY", date);
 
-        assertThat(signals).hasSize(4)
+        assertThat(signals).hasSize(2)
                 .extracting(signal -> signal.getSignal().getSignal())
-                .containsExactly("BUY_CE", "BUY_CE", "BUY_PE", "BUY_PE");
+                .containsExactly("BUY_CE", "BUY_PE");
         assertThat(signals).extracting(signal -> signal.getSignal().getCandleTime())
-                .containsExactly(date.atTime(9, 20), date.atTime(9, 30),
-                        date.atTime(9, 40), date.atTime(9, 50));
+                .containsExactly(date.atTime(9, 20), date.atTime(9, 40));
         verify(historicalDataService).getHistoricalData(
                 "NIFTY 50",
                 "5minute",

@@ -15,7 +15,7 @@ import com.pradip.tradingbot.strategy.SignalGeneratorService;
 class NiftySignalSchedulerTest {
 
     @Test
-    void recordsActionableSignalOncePerVisitToSupportOrResistanceZone() {
+        void recordsEachActionableSideOnlyOncePerMarketDay() {
         SignalGeneratorService signalGeneratorService = mock(SignalGeneratorService.class);
         KiteAlertService kiteAlertService = mock(KiteAlertService.class);
         DailySignalHistoryService historyService = new DailySignalHistoryService();
@@ -34,7 +34,7 @@ class NiftySignalSchedulerTest {
 
         assertThat(historyService.getToday())
                 .extracting(entry -> entry.getTradingSignal().getSignal())
-                .containsExactly("BUY_CE", "BUY_CE");
+                .containsExactly("BUY_CE");
         assertThat(scheduler.getStatus().getLastSignal()).isSameAs(buy);
         verify(signalGeneratorService, org.mockito.Mockito.times(4))
                 .generateScheduledSignal("NIFTY", "5minute", 5);
