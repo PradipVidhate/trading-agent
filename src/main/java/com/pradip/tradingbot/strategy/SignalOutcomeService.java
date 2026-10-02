@@ -27,7 +27,7 @@ public class SignalOutcomeService {
                                    boolean tradingDayComplete) {
         LocalDateTime signalTime = signal.getCandleTime();
         LocalDate signalDate = signalTime.toLocalDate();
-        boolean isBuy = "BUY".equals(signal.getSignal());
+        boolean isBuy = isCallSignal(signal.getSignal());
 
         List<Candle> futureCandles = dayCandles.stream()
                 .filter(candle -> candle.getTime().toLocalDate().equals(signalDate))
@@ -67,7 +67,7 @@ public class SignalOutcomeService {
                          double exitPrice,
                          String exitReason,
                          boolean realized) {
-        boolean isBuy = "BUY".equals(signal.getSignal());
+        boolean isBuy = isCallSignal(signal.getSignal());
         double rawPoints = isBuy
                 ? exitPrice - signal.getLastClose()
                 : signal.getLastClose() - exitPrice;
@@ -83,5 +83,9 @@ public class SignalOutcomeService {
 
     private double round(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private boolean isCallSignal(String signal) {
+        return "BUY_CE".equals(signal) || "BUY".equals(signal);
     }
 }

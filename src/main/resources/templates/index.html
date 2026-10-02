@@ -73,6 +73,19 @@
             min-height: 120px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #dfe7ff;
         }
         .table-wrap { overflow-x: auto; }
+        .day-pnl-summary {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+            margin-top: 14px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+        }
+        .day-pnl-stat { display: flex; flex-direction: column; gap: 5px; }
+        .day-pnl-label { color: var(--muted); font-size: 12px; }
+        .day-pnl-value { font-size: 18px; font-variant-numeric: tabular-nums; }
+        .day-pnl-value.positive { color: var(--success); }
+        .day-pnl-value.negative { color: var(--danger); }
+        @media (max-width: 640px) {
+            .day-pnl-summary { gap: 8px; }
+            .day-pnl-value { font-size: 15px; }
+        }
         table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; }
         th { color: var(--muted); font-weight: 600; }
@@ -187,6 +200,9 @@
                             <th>Symbol</th>
                             <th>Interval</th>
                             <th>Signal</th>
+                            <th>Prev-day trend</th>
+                            <th>Current trend</th>
+                            <th>Reversal</th>
                             <th>Close</th>
                             <th>Stop loss</th>
                             <th>Target</th>
@@ -211,6 +227,20 @@
                 <span id="todaySignalsStatus">Choose a date to load NIFTY 50 five-minute candles.</span>
                 <strong id="todaySignalsCount">0</strong>
             </div>
+            <div class="day-pnl-summary" aria-label="Daily index movement summary" aria-live="polite">
+                <div class="day-pnl-stat">
+                    <span class="day-pnl-label">Closed</span>
+                    <strong id="dayClosedPnl" class="day-pnl-value">-</strong>
+                </div>
+                <div class="day-pnl-stat">
+                    <span class="day-pnl-label">Open estimate</span>
+                    <strong id="dayOpenPnl" class="day-pnl-value">-</strong>
+                </div>
+                <div class="day-pnl-stat">
+                    <span class="day-pnl-label">Day total</span>
+                    <strong id="dayTotalPnl" class="day-pnl-value">-</strong>
+                </div>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -219,12 +249,15 @@
                             <th>Symbol</th>
                             <th>Interval</th>
                             <th>Signal</th>
+                            <th>Prev-day trend</th>
+                            <th>Current trend</th>
+                            <th>Reversal</th>
                             <th>Close</th>
                             <th>Stop loss</th>
                             <th>Target</th>
                             <th>Outcome</th>
-                            <th>P&amp;L (points)</th>
-                            <th>P&amp;L (%)</th>
+                            <th>Index move (points)</th>
+                            <th>Index move (%)</th>
                             <th>Exit</th>
                             <th>Exit time</th>
                             <th>Reason</th>
@@ -388,6 +421,9 @@
                         signal.symbol,
                         signal.interval,
                         signal.signal,
+                        signal.previousDayTrend,
+                        signal.currentTrend,
+                        signal.trendReversalConfirmed ? 'Yes' : 'No',
                         signal.lastClose,
                         signal.stopLoss,
                         signal.target,
@@ -429,6 +465,7 @@
             status.textContent = 'Loading NIFTY 50 candles and analyzing...';
             count.textContent = '0';
             tbody.replaceChildren();
+            setDayPnlSummary(null, null);
 
             try {
                 const response = await fetch(`${api.signalsForDay}?date=${encodeURIComponent(date)}`);
@@ -438,6 +475,14 @@
                 }
 
                 const entries = result && Array.isArray(result.data) ? result.data : [];
+                const closedPoints = entries
+                    .filter(signal => ['PROFIT', 'LOSS', 'BREAKEVEN'].includes(signal.outcome))
+                    .reduce((total, signal) => total + (Number(signal.profitLossPoints) || 0), 0);
+                const openPoints = entries
+                    .filter(signal => signal.outcome === 'OPEN')
+                    .reduce((total, signal) => total + (Number(signal.profitLossPoints) || 0), 0);
+                setDayPnlSummary(closedPoints, openPoints);
+
                 entries.forEach(signal => {
                     const row = document.createElement('tr');
                     const details = signal.signal || {};
@@ -448,6 +493,9 @@
                         details.symbol,
                         details.interval,
                         details.signal,
+                        details.previousDayTrend,
+                        details.currentTrend,
+                        details.trendReversalConfirmed ? 'Yes' : 'No',
                         details.lastClose,
                         details.stopLoss,
                         details.target,
@@ -469,12 +517,39 @@
 
                 count.textContent = String(entries.length);
                 status.textContent = entries.length
-                    ? `Found ${entries.length} BUY/SELL signals for ${date}.`
-                    : `No BUY/SELL signals generated for ${date}.`;
+                    ? `Found ${entries.length} NIFTY option signals for ${date}.`
+                    : `No NIFTY option signals generated for ${date}.`;
             } catch (error) {
                 count.textContent = '0';
+                setDayPnlSummary(null, null);
                 status.textContent = error.message || 'Could not analyze this trading date.';
             }
+        }
+
+        function setDayPnlSummary(closedPoints, openPoints) {
+            const values = [
+                ['dayClosedPnl', closedPoints],
+                ['dayOpenPnl', openPoints],
+                ['dayTotalPnl', closedPoints === null || openPoints === null
+                    ? null
+                    : closedPoints + openPoints]
+            ];
+
+            values.forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                element.classList.remove('positive', 'negative');
+                if (value === null) {
+                    element.textContent = '-';
+                    return;
+                }
+
+                element.textContent = `${value > 0 ? '+' : ''}${value.toFixed(2)} pts`;
+                if (value > 0) {
+                    element.classList.add('positive');
+                } else if (value < 0) {
+                    element.classList.add('negative');
+                }
+            });
         }
 
         async function doRequest(url, targetId, method = 'GET') {

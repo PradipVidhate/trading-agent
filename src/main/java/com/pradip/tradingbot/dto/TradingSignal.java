@@ -8,6 +8,9 @@ public class TradingSignal {
     private String interval;
     private String signal;
     private String reason;
+    private String previousDayTrend;
+    private String currentTrend;
+    private boolean trendReversalConfirmed;
     private LocalDateTime candleTime;
     private double lastClose;
     private double support;
@@ -48,6 +51,30 @@ public class TradingSignal {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    public String getPreviousDayTrend() {
+        return previousDayTrend;
+    }
+
+    public void setPreviousDayTrend(String previousDayTrend) {
+        this.previousDayTrend = previousDayTrend;
+    }
+
+    public String getCurrentTrend() {
+        return currentTrend;
+    }
+
+    public void setCurrentTrend(String currentTrend) {
+        this.currentTrend = currentTrend;
+    }
+
+    public boolean isTrendReversalConfirmed() {
+        return trendReversalConfirmed;
+    }
+
+    public void setTrendReversalConfirmed(boolean trendReversalConfirmed) {
+        this.trendReversalConfirmed = trendReversalConfirmed;
     }
 
     public LocalDateTime getCandleTime() {

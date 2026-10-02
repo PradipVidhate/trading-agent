@@ -17,7 +17,7 @@ class SignalOutcomeServiceTest {
 
     @Test
     void marksTargetAsProfitUsingOnlyCandlesAfterSignal() {
-        TradingSignal signal = signal("BUY", 100, 95, 105, 9, 15);
+        TradingSignal signal = signal("BUY_CE", 100, 95, 105, 9, 15);
         List<Candle> candles = List.of(
                 candle(9, 15, 100, 100, 100),
                 candle(9, 20, 102, 99, 101),
@@ -33,7 +33,7 @@ class SignalOutcomeServiceTest {
 
     @Test
     void treatsStopAsFirstWhenOneCandleTouchesStopAndTarget() {
-        TradingSignal signal = signal("BUY", 100, 95, 105, 9, 15);
+        TradingSignal signal = signal("BUY_CE", 100, 95, 105, 9, 15);
         List<Candle> candles = List.of(
                 candle(9, 15, 100, 100, 100),
                 candle(9, 20, 106, 94, 100));
@@ -47,7 +47,7 @@ class SignalOutcomeServiceTest {
 
     @Test
     void marksSignalWithoutFutureCandleUnresolved() {
-        TradingSignal signal = signal("SELL", 100, 105, 95, 15, 25);
+        TradingSignal signal = signal("BUY_PE", 100, 105, 95, 15, 25);
 
         SignalOutcome outcome = service.evaluate(
                 List.of(signal), List.of(candle(15, 25, 100, 100, 100)), true).get(0);
@@ -58,7 +58,7 @@ class SignalOutcomeServiceTest {
 
     @Test
     void marksCurrentDaySignalOpenAtLatestAvailableCandle() {
-        TradingSignal signal = signal("BUY", 100, 95, 105, 9, 15);
+        TradingSignal signal = signal("BUY_CE", 100, 95, 105, 9, 15);
 
         SignalOutcome outcome = service.evaluate(List.of(signal), List.of(
                 candle(9, 15, 100, 100, 100),
@@ -71,7 +71,7 @@ class SignalOutcomeServiceTest {
 
     @Test
     void closesAnUnhitSignalAtTheLastCandleOnCompletedDay() {
-        TradingSignal signal = signal("SELL", 100, 105, 95, 9, 15);
+        TradingSignal signal = signal("BUY_PE", 100, 105, 95, 9, 15);
 
         SignalOutcome outcome = service.evaluate(List.of(signal), List.of(
                 candle(9, 15, 100, 100, 100),

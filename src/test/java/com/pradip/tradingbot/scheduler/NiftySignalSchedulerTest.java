@@ -19,7 +19,7 @@ class NiftySignalSchedulerTest {
         SignalGeneratorService signalGeneratorService = mock(SignalGeneratorService.class);
         KiteAlertService kiteAlertService = mock(KiteAlertService.class);
         DailySignalHistoryService historyService = new DailySignalHistoryService();
-        TradingSignal buy = signal("BUY");
+        TradingSignal buy = signal("BUY_CE");
         TradingSignal noTrade = signal("NO_TRADE");
         when(signalGeneratorService.generateScheduledSignal("NIFTY", "5minute", 5))
                 .thenReturn(buy, buy, noTrade, buy);
@@ -34,7 +34,7 @@ class NiftySignalSchedulerTest {
 
         assertThat(historyService.getToday())
                 .extracting(entry -> entry.getTradingSignal().getSignal())
-                .containsExactly("BUY", "BUY");
+                .containsExactly("BUY_CE", "BUY_CE");
         assertThat(scheduler.getStatus().getLastSignal()).isSameAs(buy);
         verify(signalGeneratorService, org.mockito.Mockito.times(4))
                 .generateScheduledSignal("NIFTY", "5minute", 5);

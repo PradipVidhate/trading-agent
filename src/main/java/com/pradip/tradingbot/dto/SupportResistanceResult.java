@@ -5,9 +5,11 @@ import java.time.LocalDate;
 public class SupportResistanceResult {
 
     private LocalDate referenceDate;
+    private double previousDayOpen;
     private double previousDayHigh;
     private double previousDayLow;
     private double previousDayClose;
+    private String previousDayTrend;
     private double pivot;
     private double support;
     private double resistance;
@@ -18,6 +20,14 @@ public class SupportResistanceResult {
 
     public void setReferenceDate(LocalDate referenceDate) {
         this.referenceDate = referenceDate;
+    }
+
+    public double getPreviousDayOpen() {
+        return previousDayOpen;
+    }
+
+    public void setPreviousDayOpen(double previousDayOpen) {
+        this.previousDayOpen = previousDayOpen;
     }
 
     public double getPreviousDayHigh() {
@@ -42,6 +52,14 @@ public class SupportResistanceResult {
 
     public void setPreviousDayClose(double previousDayClose) {
         this.previousDayClose = previousDayClose;
+    }
+
+    public String getPreviousDayTrend() {
+        return previousDayTrend;
+    }
+
+    public void setPreviousDayTrend(String previousDayTrend) {
+        this.previousDayTrend = previousDayTrend;
     }
 
     public double getPivot() {

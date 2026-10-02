@@ -114,11 +114,11 @@ public class OptionAnalyzerService {
 
     private String optionTypeFor(String signal) {
 
-        if ("BUY".equals(signal)) {
+        if ("BUY_CE".equals(signal) || "BUY".equals(signal)) {
             return "CE";
         }
 
-        if ("SELL".equals(signal)) {
+        if ("BUY_PE".equals(signal) || "SELL".equals(signal)) {
             return "PE";
         }
 
