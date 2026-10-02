@@ -2,7 +2,9 @@ package com.pradip.tradingbot.controller;
 
 import java.util.Arrays;
 import java.util.List;
+import java.time.LocalDate;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,7 @@ import com.pradip.tradingbot.dto.DailySignalEntry;
 import com.pradip.tradingbot.dto.KiteAlertSetupResult;
 import com.pradip.tradingbot.dto.ScheduledSignalStatus;
 import com.pradip.tradingbot.dto.SignalScanResult;
+import com.pradip.tradingbot.dto.SignalOutcome;
 import com.pradip.tradingbot.dto.SupportResistanceResult;
 import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
@@ -108,6 +111,15 @@ public class StrategyController {
                 return ApiResponse.success(
                                 "Signals generated today",
                                 dailySignalHistoryService.getToday());
+        }
+
+        @GetMapping("/signals/day")
+        public ApiResponse<List<SignalOutcome>> signalsForDay(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+                List<SignalOutcome> signals =
+                                signalGeneratorService.generateSignalsForDay("NIFTY", date);
+                return ApiResponse.success("NIFTY 50 signals for " + date, signals);
         }
 
     @GetMapping("/scheduled-signal")

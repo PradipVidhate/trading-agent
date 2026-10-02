@@ -29,6 +29,10 @@ public class DailySignalHistoryService {
     }
 
     public synchronized void record(TradingSignal tradingSignal) {
+        if (tradingSignal == null || "NO_TRADE".equals(tradingSignal.getSignal())) {
+            return;
+        }
+
         LocalDate today = LocalDate.now(clock);
         entries.removeIf(entry -> !entry.getGeneratedAt().toLocalDate().equals(today));
         entries.add(0, new DailySignalEntry(LocalDateTime.now(clock), tradingSignal));

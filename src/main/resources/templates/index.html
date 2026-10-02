@@ -42,6 +42,22 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
         .card h3 { margin: 0 0 16px; font-size: 1.1rem; }
+        .module { padding: 0; }
+        .module > summary {
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+            padding: 18px; cursor: pointer; list-style: none; user-select: none;
+        }
+        .module > summary::-webkit-details-marker { display: none; }
+        .module > summary::after {
+            content: "+"; width: 24px; flex: 0 0 24px; text-align: center;
+            color: var(--accent2); font-size: 20px; line-height: 1;
+        }
+        .module[open] > summary::after { content: "-"; }
+        .module > summary h3 { margin: 0; }
+        .module > summary:focus-visible { outline: 2px solid var(--accent2); outline-offset: -3px; }
+        .module > :not(summary) { margin-right: 18px; margin-left: 18px; }
+        .module > :last-child:not(summary) { margin-bottom: 18px; }
+        .module-summary-meta { margin-left: auto; color: var(--muted); font-size: 12px; }
         .status-box { display: flex; flex-direction: column; gap: 8px; }
         .status-row {
             display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted);
@@ -81,28 +97,28 @@
         <div id="loginBanner" class="result-box" style="display:none; margin-bottom:18px;"></div>
 
         <div class="grid">
-            <div class="card">
-                <h3>Session</h3>
+            <details class="card module">
+                <summary><h3>Session</h3></summary>
                 <div class="status-box">
                     <div class="status-row"><span>State</span><strong id="sessionState">Checking...</strong></div>
                     <div class="status-row"><span>User</span><span id="sessionUser">-</span></div>
                     <div class="status-row"><span>Access token</span><span id="sessionToken">-</span></div>
                 </div>
-            </div>
+            </details>
 
-            <div class="card">
-                <h3>Instrument Master</h3>
+            <details class="card module">
+                <summary><h3>Instrument Master</h3></summary>
                 <div class="status-box">
                     <div class="status-row"><span>Total instruments</span><strong id="instrumentCount">0</strong></div>
                     <div class="status-row"><span>Search symbol</span><input id="searchSymbol" placeholder="e.g. NIFTY" /></div>
                     <div class="status-row"><span></span><button id="searchBtn" class="secondary" style="width: 100%;">Search</button></div>
                 </div>
-            </div>
+            </details>
         </div>
 
         <div class="grid">
-            <div class="card">
-                <h3>Signal Generator</h3>
+            <details class="card module">
+                <summary><h3>Signal Generator</h3></summary>
                 <div class="field">
                     <label>Symbol</label>
                     <input id="signalSymbol" value="NIFTY" />
@@ -124,10 +140,10 @@
                     <button id="signalBtn" class="secondary">Get Signal</button>
                 </div>
                 <div id="signalResult" class="result-box">No signal loaded yet.</div>
-            </div>
+            </details>
 
-            <div class="card">
-                <h3>Bulk Scan</h3>
+            <details class="card module">
+                <summary><h3>Bulk Scan</h3></summary>
                 <div class="field">
                     <label>Symbols</label>
                     <input id="scanSymbols" value="NIFTY, BANKNIFTY" />
@@ -148,16 +164,51 @@
                     <button id="scanBtn">Scan Signals</button>
                 </div>
                 <div id="scanResult" class="result-box">No scan run yet.</div>
-            </div>
+            </details>
         </div>
 
-        <div class="card" style="margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                <h3 style="margin: 0;">Signals Generated Today (IST)</h3>
-                <button id="refreshTodaySignalsBtn" class="secondary" type="button">Refresh</button>
+        <details class="card module" style="margin-bottom: 20px;">
+            <summary>
+                <h3>Live Signals Generated</h3>
+                <span id="liveSignalsSummary" class="module-summary-meta">Loading...</span>
+            </summary>
+            <div class="status-row">
+                <span id="liveSignalsStatus">Loading today's actionable signals...</span>
+                <strong id="liveSignalsCount">0</strong>
+            </div>
+            <div style="margin-top: 12px;">
+                <button id="refreshLiveSignalsBtn" class="secondary" type="button">Refresh</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Generated</th>
+                            <th>Symbol</th>
+                            <th>Interval</th>
+                            <th>Signal</th>
+                            <th>Close</th>
+                            <th>Stop loss</th>
+                            <th>Target</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liveSignalsTableBody"></tbody>
+                </table>
+            </div>
+        </details>
+
+        <details class="card module" style="margin-bottom: 20px;" open>
+            <summary><h3>NIFTY 50 Day Analysis</h3></summary>
+            <div style="display: flex; align-items: end; gap: 12px; flex-wrap: wrap;">
+                <div class="field" style="width: min(100%, 260px);">
+                    <label for="signalDate">Trading date</label>
+                    <input id="signalDate" type="date" />
+                </div>
+                <button id="analyzeDayBtn" type="button">Analyze day</button>
             </div>
             <div class="status-row" style="margin-top: 14px;">
-                <span id="todaySignalsStatus">Loading today's signals...</span>
+                <span id="todaySignalsStatus">Choose a date to load NIFTY 50 five-minute candles.</span>
                 <strong id="todaySignalsCount">0</strong>
             </div>
             <div class="table-wrap">
@@ -171,17 +222,21 @@
                             <th>Close</th>
                             <th>Stop loss</th>
                             <th>Target</th>
-                            <th>R:R</th>
+                            <th>Outcome</th>
+                            <th>P&amp;L (points)</th>
+                            <th>P&amp;L (%)</th>
+                            <th>Exit</th>
+                            <th>Exit time</th>
                             <th>Reason</th>
                         </tr>
                     </thead>
                     <tbody id="todaySignalsTableBody"></tbody>
                 </table>
             </div>
-        </div>
+        </details>
 
-        <div class="card">
-            <h3>Historical Data</h3>
+        <details class="card module">
+            <summary><h3>Historical Data</h3></summary>
             <div class="field">
                 <label>Symbol</label>
                 <input id="historySymbol" value="NIFTY" />
@@ -216,10 +271,10 @@
                     <tbody id="historyTableBody"></tbody>
                 </table>
             </div>
-        </div>
+        </details>
 
-        <div class="card" style="margin-top: 20px;">
-            <h3>Kite Alerts</h3>
+        <details class="card module" style="margin-top: 20px;">
+            <summary><h3>Kite Alerts</h3></summary>
             <div class="field">
                 <label>Interval</label>
                 <select id="alertInterval">
@@ -236,7 +291,7 @@
                 <button id="alertBtn">Create / Update Alerts</button>
             </div>
             <div id="alertResult" class="result-box">No alerts setup yet.</div>
-        </div>
+        </details>
     </div>
 
     <script>
@@ -250,7 +305,8 @@
             levels: '/strategy/levels',
             signal: '/strategy/signal',
             signals: '/strategy/signals',
-            todaySignals: '/strategy/signals/today',
+            liveSignals: '/strategy/signals/today',
+            signalsForDay: '/strategy/signals/day',
             alerts: '/strategy/kite-alerts'
         };
 
@@ -309,23 +365,23 @@
             }
         }
 
-        async function loadTodaySignals() {
-            const status = document.getElementById('todaySignalsStatus');
-            const count = document.getElementById('todaySignalsCount');
-            const tbody = document.getElementById('todaySignalsTableBody');
+        async function loadLiveSignals() {
+            const summary = document.getElementById('liveSignalsSummary');
+            const status = document.getElementById('liveSignalsStatus');
+            const count = document.getElementById('liveSignalsCount');
+            const tbody = document.getElementById('liveSignalsTableBody');
 
             try {
-                const response = await fetch(api.todaySignals);
+                const response = await fetch(api.liveSignals);
                 const result = await response.json();
                 if (!response.ok) {
-                    throw new Error(result && result.message ? result.message : 'Could not load today\'s signals.');
+                    throw new Error(result && result.message ? result.message : 'Could not load live signals.');
                 }
 
                 const entries = result && Array.isArray(result.data) ? result.data : [];
                 tbody.replaceChildren();
                 entries.forEach(entry => {
                     const signal = entry.tradingSignal || {};
-                    const row = document.createElement('tr');
                     const generatedAt = entry.generatedAt || '';
                     const values = [
                         generatedAt.includes('T') ? generatedAt.replace('T', ' ').slice(11, 16) : generatedAt,
@@ -335,8 +391,72 @@
                         signal.lastClose,
                         signal.stopLoss,
                         signal.target,
-                        signal.riskRewardRatio,
                         signal.reason
+                    ];
+
+                    const row = document.createElement('tr');
+                    values.forEach(value => {
+                        const cell = document.createElement('td');
+                        cell.textContent = value === null || value === undefined || value === '' ? '-' : String(value);
+                        row.appendChild(cell);
+                    });
+                    tbody.appendChild(row);
+                });
+
+                count.textContent = String(entries.length);
+                summary.textContent = `${entries.length} today`;
+                status.textContent = entries.length
+                    ? 'Showing actionable signals generated today.'
+                    : 'No actionable signals generated today.';
+            } catch (error) {
+                summary.textContent = 'Unavailable';
+                count.textContent = '0';
+                status.textContent = error.message || 'Could not load live signals.';
+            }
+        }
+
+        async function loadSignalsForDay() {
+            const status = document.getElementById('todaySignalsStatus');
+            const count = document.getElementById('todaySignalsCount');
+            const tbody = document.getElementById('todaySignalsTableBody');
+            const date = document.getElementById('signalDate').value;
+
+            if (!date) {
+                status.textContent = 'Select a trading date first.';
+                return;
+            }
+
+            status.textContent = 'Loading NIFTY 50 candles and analyzing...';
+            count.textContent = '0';
+            tbody.replaceChildren();
+
+            try {
+                const response = await fetch(`${api.signalsForDay}?date=${encodeURIComponent(date)}`);
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result && result.message ? result.message : 'Could not analyze this trading date.');
+                }
+
+                const entries = result && Array.isArray(result.data) ? result.data : [];
+                entries.forEach(signal => {
+                    const row = document.createElement('tr');
+                    const details = signal.signal || {};
+                    const candleTime = details.candleTime || '';
+                    const exitTime = signal.exitTime || '';
+                    const values = [
+                        candleTime.includes('T') ? candleTime.replace('T', ' ').slice(11, 16) : candleTime,
+                        details.symbol,
+                        details.interval,
+                        details.signal,
+                        details.lastClose,
+                        details.stopLoss,
+                        details.target,
+                        signal.outcome,
+                        signal.profitLossPoints,
+                        signal.profitLossPercent,
+                        signal.exitReason,
+                        exitTime.includes('T') ? exitTime.replace('T', ' ').slice(11, 16) : exitTime,
+                        details.reason
                     ];
 
                     values.forEach(value => {
@@ -348,10 +468,12 @@
                 });
 
                 count.textContent = String(entries.length);
-                status.textContent = entries.length ? '' : 'No signals generated today.';
+                status.textContent = entries.length
+                    ? `Found ${entries.length} BUY/SELL signals for ${date}.`
+                    : `No BUY/SELL signals generated for ${date}.`;
             } catch (error) {
                 count.textContent = '0';
-                status.textContent = error.message || 'Could not load today\'s signals.';
+                status.textContent = error.message || 'Could not analyze this trading date.';
             }
         }
 
@@ -409,7 +531,6 @@
             const days = document.getElementById('signalDays').value;
             const url = `${api.signal}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&days=${days}`;
             await doRequest(url, 'signalResult');
-            await loadTodaySignals();
         });
 
         document.getElementById('scanBtn').addEventListener('click', async () => {
@@ -418,10 +539,23 @@
             const days = document.getElementById('scanDays').value;
             const url = `${api.signals}?symbols=${encodeURIComponent(symbols)}&interval=${encodeURIComponent(interval)}&days=${days}`;
             await doRequest(url, 'scanResult');
-            await loadTodaySignals();
         });
 
-        document.getElementById('refreshTodaySignalsBtn').addEventListener('click', loadTodaySignals);
+        document.getElementById('analyzeDayBtn').addEventListener('click', loadSignalsForDay);
+        document.getElementById('refreshLiveSignalsBtn').addEventListener('click', loadLiveSignals);
+
+        const liveSignalsModule = document.getElementById('liveSignalsTableBody').closest('details');
+        liveSignalsModule.addEventListener('toggle', () => {
+            if (liveSignalsModule.open) loadLiveSignals();
+        });
+
+        const marketDateParts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date());
+        const marketDate = Object.fromEntries(marketDateParts.map(part => [part.type, part.value]));
+        const signalDateInput = document.getElementById('signalDate');
+        signalDateInput.value = `${marketDate.year}-${marketDate.month}-${marketDate.day}`;
+        signalDateInput.max = signalDateInput.value;
 
         document.getElementById('historyBtn').addEventListener('click', async () => {
             const symbol = document.getElementById('historySymbol').value;
@@ -453,8 +587,10 @@
 
         loadSession();
         loadCount();
-        loadTodaySignals();
-        window.setInterval(loadTodaySignals, 60000);
+        loadLiveSignals();
+        window.setInterval(() => {
+            if (liveSignalsModule.open) loadLiveSignals();
+        }, 30000);
     </script>
 </body>
 </html>

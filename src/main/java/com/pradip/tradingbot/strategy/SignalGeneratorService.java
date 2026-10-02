@@ -1,11 +1,17 @@
 package com.pradip.tradingbot.strategy;
 
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 
 import org.springframework.stereotype.Service;
 
 import com.pradip.tradingbot.dto.SignalScanResult;
+import com.pradip.tradingbot.dto.SignalOutcome;
 import com.pradip.tradingbot.dto.SupportResistanceResult;
 import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
@@ -18,26 +24,47 @@ public class SignalGeneratorService {
 
     private static final double DEFAULT_PROXIMITY_PERCENT = 0.30;
     private static final double STOP_LOSS_BUFFER_PERCENT = 0.10;
+    private static final String INTRADAY_INTERVAL = "5minute";
+    private static final int PREVIOUS_SESSION_LOOKBACK_DAYS = 10;
+    private static final ZoneId MARKET_ZONE = ZoneId.of("Asia/Kolkata");
 
     private final HistoricalDataService historicalDataService;
     private final InstrumentService instrumentService;
     private final SupportResistanceService supportResistanceService;
+    private final SignalOutcomeService signalOutcomeService;
     private final DailySignalHistoryService dailySignalHistoryService;
 
     public SignalGeneratorService(HistoricalDataService historicalDataService,
                                   InstrumentService instrumentService,
                                   SupportResistanceService supportResistanceService,
+                                  SignalOutcomeService signalOutcomeService,
                                   DailySignalHistoryService dailySignalHistoryService) {
 
         this.historicalDataService = historicalDataService;
         this.instrumentService = instrumentService;
         this.supportResistanceService = supportResistanceService;
+        this.signalOutcomeService = signalOutcomeService;
         this.dailySignalHistoryService = dailySignalHistoryService;
     }
 
     public TradingSignal generateSignal(String symbol,
                                         String interval,
                                         int days) {
+
+        return generateSignal(symbol, interval, days, true);
+    }
+
+    public TradingSignal generateScheduledSignal(String symbol,
+                                                 String interval,
+                                                 int days) {
+
+        return generateSignal(symbol, interval, days, false);
+    }
+
+    private TradingSignal generateSignal(String symbol,
+                                         String interval,
+                                         int days,
+                                         boolean record) {
 
         String indexSymbol = requireNiftyIndexSymbol(symbol);
 
@@ -55,7 +82,65 @@ public class SignalGeneratorService {
                 .max(Comparator.comparing(Candle::getTime))
                 .orElseThrow(() -> new RuntimeException("Latest candle could not be found."));
 
-        double lastClose = latestCandle.getClose();
+        TradingSignal tradingSignal = createSignal(indexSymbol, interval, latestCandle, levels);
+        if (record && !"NO_TRADE".equals(tradingSignal.getSignal())) {
+            dailySignalHistoryService.record(tradingSignal);
+        }
+
+        return tradingSignal;
+    }
+
+    public List<SignalOutcome> generateSignalsForDay(String symbol, LocalDate date) {
+
+        if (date == null) {
+            throw new RuntimeException("A trading date is required.");
+        }
+        if (date.isAfter(LocalDate.now(MARKET_ZONE))) {
+            throw new RuntimeException("Trading date cannot be in the future.");
+        }
+
+        String indexSymbol = requireNiftyIndexSymbol(symbol);
+        LocalDateTime from = date.minusDays(PREVIOUS_SESSION_LOOKBACK_DAYS).atStartOfDay();
+        LocalDateTime to = date.atTime(23, 59, 59);
+        List<Candle> candles = historicalDataService.getHistoricalData(
+                indexSymbol, INTRADAY_INTERVAL, from, to);
+
+        List<Candle> dayCandles = candles.stream()
+                .filter(candle -> date.equals(candle.getTime().toLocalDate()))
+                .sorted(Comparator.comparing(Candle::getTime))
+                .toList();
+        if (dayCandles.isEmpty()) {
+            throw new RuntimeException("No NIFTY 50 5-minute candles found for " + date + ".");
+        }
+
+        SupportResistanceResult levels = supportResistanceService.calculate(candles);
+        List<TradingSignal> signals = new ArrayList<>();
+        String lastActionableSignal = "NO_TRADE";
+        for (Candle candle : dayCandles) {
+            TradingSignal signal = createSignal(indexSymbol, INTRADAY_INTERVAL, candle, levels);
+            if ("NO_TRADE".equals(signal.getSignal())) {
+                lastActionableSignal = "NO_TRADE";
+                continue;
+            }
+
+            if (!signal.getSignal().equals(lastActionableSignal)) {
+                signals.add(signal);
+            }
+            lastActionableSignal = signal.getSignal();
+        }
+
+        LocalDate today = LocalDate.now(MARKET_ZONE);
+        boolean tradingDayComplete = date.isBefore(today)
+            || (date.equals(today) && LocalTime.now(MARKET_ZONE).isAfter(LocalTime.of(15, 30)));
+        return signalOutcomeService.evaluate(signals, dayCandles, tradingDayComplete);
+    }
+
+    private TradingSignal createSignal(String indexSymbol,
+                                      String interval,
+                                      Candle candle,
+                                      SupportResistanceResult levels) {
+
+        double lastClose = candle.getClose();
         String signal = "NO_TRADE";
         String reason = "Price is not near support or resistance.";
 
@@ -82,14 +167,13 @@ public class SignalGeneratorService {
         tradingSignal.setInterval(interval);
         tradingSignal.setSignal(signal);
         tradingSignal.setReason(reason);
-        tradingSignal.setCandleTime(latestCandle.getTime());
+        tradingSignal.setCandleTime(candle.getTime());
         tradingSignal.setLastClose(round(lastClose));
         tradingSignal.setSupport(levels.getSupport());
         tradingSignal.setResistance(levels.getResistance());
         tradingSignal.setPivot(levels.getPivot());
         applyRiskLevels(tradingSignal);
         tradingSignal.setProximityPercent(DEFAULT_PROXIMITY_PERCENT);
-        dailySignalHistoryService.record(tradingSignal);
 
         return tradingSignal;
     }

@@ -28,4 +28,15 @@ class DailySignalHistoryServiceTest {
                 .isEqualTo(LocalDateTime.of(2026, 10, 1, 14, 30));
         assertThat(historyService.getToday().get(0).getTradingSignal()).isSameAs(signal);
     }
+
+    @Test
+    void doesNotRecordNoTradeResults() {
+        DailySignalHistoryService historyService = new DailySignalHistoryService();
+        TradingSignal signal = new TradingSignal();
+        signal.setSignal("NO_TRADE");
+
+        historyService.record(signal);
+
+        assertThat(historyService.getToday()).isEmpty();
+    }
 }

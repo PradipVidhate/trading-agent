@@ -32,8 +32,21 @@ public class HistoricalDataService {
                                           String interval,
                                           int days) {
 
+        LocalDateTime to = LocalDateTime.now();
+        return getHistoricalData(symbol, interval, to.minusDays(days), to);
+    }
+
+    public List<Candle> getHistoricalData(String symbol,
+                                          String interval,
+                                          LocalDateTime from,
+                                          LocalDateTime to) {
+
         if (!sessionService.isLoggedIn()) {
             throw new RuntimeException("Please login first.");
+        }
+
+        if (from.isAfter(to)) {
+            throw new RuntimeException("Historical data start time must be before end time.");
         }
 
         Instrument instrument =
@@ -42,9 +55,6 @@ public class HistoricalDataService {
         if (instrument == null) {
             throw new RuntimeException("Instrument not found : " + symbol);
         }
-
-        LocalDateTime to = LocalDateTime.now();
-        LocalDateTime from = to.minusDays(days);
 
         JsonNode response =
                 kiteClient.getHistoricalData(
