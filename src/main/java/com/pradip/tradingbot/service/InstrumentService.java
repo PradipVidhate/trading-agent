@@ -1,7 +1,9 @@
 package com.pradip.tradingbot.service;
 
 import java.io.StringReader;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -147,5 +149,31 @@ public class InstrumentService {
                         && i.getTradingSymbol().toUpperCase().contains(keyword.toUpperCase()))
                 .limit(20)
                 .toList();
+    }
+
+    public List<Instrument> findNiftyOptions(String optionType,
+                                             LocalDate notBefore) {
+
+        return instruments.stream()
+                .filter(instrument -> "NFO".equalsIgnoreCase(instrument.getExchange()))
+                .filter(instrument -> "NFO-OPT".equalsIgnoreCase(instrument.getSegment()))
+                .filter(instrument -> optionType.equalsIgnoreCase(instrument.getInstrumentType()))
+                .filter(this::isNiftyOption)
+                .filter(instrument -> instrument.getExpiry() != null)
+                .filter(instrument -> !instrument.getExpiry().isBefore(notBefore))
+                .sorted(Comparator.comparing(Instrument::getExpiry)
+                        .thenComparingDouble(Instrument::getStrike))
+                .toList();
+    }
+
+    private boolean isNiftyOption(Instrument instrument) {
+
+        if ("NIFTY".equalsIgnoreCase(instrument.getName())) {
+            return true;
+        }
+
+        String tradingSymbol = instrument.getTradingSymbol();
+        return tradingSymbol != null
+                && tradingSymbol.toUpperCase().startsWith("NIFTY");
     }
 }

@@ -1,5 +1,7 @@
 package com.pradip.tradingbot.model;
 
+import java.time.LocalDate;
+
 public class Instrument {
 
     private long instrumentToken;
@@ -8,6 +10,10 @@ public class Instrument {
     private String name;
     private String exchange;
     private String segment;
+    private LocalDate expiry;
+    private double strike;
+    private int lotSize;
+    private String instrumentType;
 
     public long getInstrumentToken() {
         return instrumentToken;
@@ -55,5 +61,37 @@ public class Instrument {
 
     public void setSegment(String segment) {
         this.segment = segment;
+    }
+
+    public LocalDate getExpiry() {
+        return expiry;
+    }
+
+    public void setExpiry(LocalDate expiry) {
+        this.expiry = expiry;
+    }
+
+    public double getStrike() {
+        return strike;
+    }
+
+    public void setStrike(double strike) {
+        this.strike = strike;
+    }
+
+    public int getLotSize() {
+        return lotSize;
+    }
+
+    public void setLotSize(int lotSize) {
+        this.lotSize = lotSize;
+    }
+
+    public String getInstrumentType() {
+        return instrumentType;
+    }
+
+    public void setInstrumentType(String instrumentType) {
+        this.instrumentType = instrumentType;
     }
 }

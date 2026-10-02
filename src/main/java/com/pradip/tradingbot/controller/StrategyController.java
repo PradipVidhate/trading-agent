@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pradip.tradingbot.dto.ApiResponse;
+import com.pradip.tradingbot.dto.DailySignalEntry;
 import com.pradip.tradingbot.dto.KiteAlertSetupResult;
 import com.pradip.tradingbot.dto.ScheduledSignalStatus;
 import com.pradip.tradingbot.dto.SignalScanResult;
@@ -17,6 +18,7 @@ import com.pradip.tradingbot.dto.SupportResistanceResult;
 import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
 import com.pradip.tradingbot.scheduler.NiftySignalScheduler;
+import com.pradip.tradingbot.service.DailySignalHistoryService;
 import com.pradip.tradingbot.service.HistoricalDataService;
 import com.pradip.tradingbot.service.KiteAlertService;
 import com.pradip.tradingbot.strategy.SignalGeneratorService;
@@ -31,18 +33,21 @@ public class StrategyController {
     private final SignalGeneratorService signalGeneratorService;
     private final NiftySignalScheduler niftySignalScheduler;
     private final KiteAlertService kiteAlertService;
+        private final DailySignalHistoryService dailySignalHistoryService;
 
     public StrategyController(HistoricalDataService historicalDataService,
                               SupportResistanceService supportResistanceService,
                               SignalGeneratorService signalGeneratorService,
                               NiftySignalScheduler niftySignalScheduler,
-                              KiteAlertService kiteAlertService) {
+                              KiteAlertService kiteAlertService,
+                              DailySignalHistoryService dailySignalHistoryService) {
 
         this.historicalDataService = historicalDataService;
         this.supportResistanceService = supportResistanceService;
         this.signalGeneratorService = signalGeneratorService;
         this.niftySignalScheduler = niftySignalScheduler;
         this.kiteAlertService = kiteAlertService;
+        this.dailySignalHistoryService = dailySignalHistoryService;
     }
 
     @GetMapping("/levels")
@@ -96,6 +101,14 @@ public class StrategyController {
 
         return ApiResponse.success("Trading signals", result);
     }
+
+        @GetMapping("/signals/today")
+        public ApiResponse<List<DailySignalEntry>> todaySignals() {
+
+                return ApiResponse.success(
+                                "Signals generated today",
+                                dailySignalHistoryService.getToday());
+        }
 
     @GetMapping("/scheduled-signal")
     public ApiResponse<ScheduledSignalStatus> scheduledSignal() {

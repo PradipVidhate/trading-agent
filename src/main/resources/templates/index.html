@@ -151,6 +151,35 @@
             </div>
         </div>
 
+        <div class="card" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <h3 style="margin: 0;">Signals Generated Today (IST)</h3>
+                <button id="refreshTodaySignalsBtn" class="secondary" type="button">Refresh</button>
+            </div>
+            <div class="status-row" style="margin-top: 14px;">
+                <span id="todaySignalsStatus">Loading today's signals...</span>
+                <strong id="todaySignalsCount">0</strong>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Interval</th>
+                            <th>Signal</th>
+                            <th>Close</th>
+                            <th>Stop loss</th>
+                            <th>Target</th>
+                            <th>R:R</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todaySignalsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="card">
             <h3>Historical Data</h3>
             <div class="field">
@@ -221,6 +250,7 @@
             levels: '/strategy/levels',
             signal: '/strategy/signal',
             signals: '/strategy/signals',
+            todaySignals: '/strategy/signals/today',
             alerts: '/strategy/kite-alerts'
         };
 
@@ -279,6 +309,52 @@
             }
         }
 
+        async function loadTodaySignals() {
+            const status = document.getElementById('todaySignalsStatus');
+            const count = document.getElementById('todaySignalsCount');
+            const tbody = document.getElementById('todaySignalsTableBody');
+
+            try {
+                const response = await fetch(api.todaySignals);
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result && result.message ? result.message : 'Could not load today\'s signals.');
+                }
+
+                const entries = result && Array.isArray(result.data) ? result.data : [];
+                tbody.replaceChildren();
+                entries.forEach(entry => {
+                    const signal = entry.tradingSignal || {};
+                    const row = document.createElement('tr');
+                    const generatedAt = entry.generatedAt || '';
+                    const values = [
+                        generatedAt.includes('T') ? generatedAt.replace('T', ' ').slice(11, 16) : generatedAt,
+                        signal.symbol,
+                        signal.interval,
+                        signal.signal,
+                        signal.lastClose,
+                        signal.stopLoss,
+                        signal.target,
+                        signal.riskRewardRatio,
+                        signal.reason
+                    ];
+
+                    values.forEach(value => {
+                        const cell = document.createElement('td');
+                        cell.textContent = value === null || value === undefined || value === '' ? '-' : String(value);
+                        row.appendChild(cell);
+                    });
+                    tbody.appendChild(row);
+                });
+
+                count.textContent = String(entries.length);
+                status.textContent = entries.length ? '' : 'No signals generated today.';
+            } catch (error) {
+                count.textContent = '0';
+                status.textContent = error.message || 'Could not load today\'s signals.';
+            }
+        }
+
         async function doRequest(url, targetId, method = 'GET') {
             const response = await fetch(url, { method });
             const text = await response.text();
@@ -333,6 +409,7 @@
             const days = document.getElementById('signalDays').value;
             const url = `${api.signal}?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&days=${days}`;
             await doRequest(url, 'signalResult');
+            await loadTodaySignals();
         });
 
         document.getElementById('scanBtn').addEventListener('click', async () => {
@@ -341,7 +418,10 @@
             const days = document.getElementById('scanDays').value;
             const url = `${api.signals}?symbols=${encodeURIComponent(symbols)}&interval=${encodeURIComponent(interval)}&days=${days}`;
             await doRequest(url, 'scanResult');
+            await loadTodaySignals();
         });
+
+        document.getElementById('refreshTodaySignalsBtn').addEventListener('click', loadTodaySignals);
 
         document.getElementById('historyBtn').addEventListener('click', async () => {
             const symbol = document.getElementById('historySymbol').value;
@@ -373,6 +453,8 @@
 
         loadSession();
         loadCount();
+        loadTodaySignals();
+        window.setInterval(loadTodaySignals, 60000);
     </script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 package com.pradip.tradingbot.util;
 
 import java.io.Reader;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,9 +46,48 @@ public class InstrumentParser {
             instrument.setSegment(
                     record.get("segment"));
 
+            instrument.setExpiry(
+                    parseDate(record.get("expiry")));
+
+            instrument.setStrike(
+                    parseDouble(record.get("strike")));
+
+            instrument.setLotSize(
+                    parseInt(record.get("lot_size")));
+
+            instrument.setInstrumentType(
+                    record.get("instrument_type"));
+
             list.add(instrument);
         }
 
         return list;
+    }
+
+    private static LocalDate parseDate(String value) {
+
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return LocalDate.parse(value);
+    }
+
+    private static double parseDouble(String value) {
+
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+
+        return Double.parseDouble(value);
+    }
+
+    private static int parseInt(String value) {
+
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+
+        return Integer.parseInt(value);
     }
 }

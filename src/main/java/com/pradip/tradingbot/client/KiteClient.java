@@ -3,6 +3,7 @@ package com.pradip.tradingbot.client;
 import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 
@@ -93,6 +94,30 @@ public class KiteClient {
                         + ":" + accessToken)
                 .retrieve()
                 .body(String.class);
+    }
+
+    public JsonNode getQuotes(List<String> instruments,
+                              String accessToken) {
+
+        return restClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.scheme("https")
+                            .host("api.kite.trade")
+                            .path(ApiConstants.QUOTES);
+
+                    instruments.forEach(instrument ->
+                            uriBuilder.queryParam("i", instrument));
+
+                    return uriBuilder.build();
+                })
+                .header(HttpHeaders.AUTHORIZATION,
+                        "token "
+                                + kiteProperties.getApiKey()
+                                + ":"
+                                + accessToken)
+                .header("X-Kite-Version", "3")
+                .retrieve()
+                .body(JsonNode.class);
     }
 
     public ApiResponse<JsonNode> createSimpleAlert(String accessToken,

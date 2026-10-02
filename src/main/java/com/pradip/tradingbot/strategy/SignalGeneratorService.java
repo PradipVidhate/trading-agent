@@ -9,6 +9,7 @@ import com.pradip.tradingbot.dto.SignalScanResult;
 import com.pradip.tradingbot.dto.SupportResistanceResult;
 import com.pradip.tradingbot.dto.TradingSignal;
 import com.pradip.tradingbot.model.Candle;
+import com.pradip.tradingbot.service.DailySignalHistoryService;
 import com.pradip.tradingbot.service.HistoricalDataService;
 import com.pradip.tradingbot.service.InstrumentService;
 
@@ -21,14 +22,17 @@ public class SignalGeneratorService {
     private final HistoricalDataService historicalDataService;
     private final InstrumentService instrumentService;
     private final SupportResistanceService supportResistanceService;
+    private final DailySignalHistoryService dailySignalHistoryService;
 
     public SignalGeneratorService(HistoricalDataService historicalDataService,
                                   InstrumentService instrumentService,
-                                  SupportResistanceService supportResistanceService) {
+                                  SupportResistanceService supportResistanceService,
+                                  DailySignalHistoryService dailySignalHistoryService) {
 
         this.historicalDataService = historicalDataService;
         this.instrumentService = instrumentService;
         this.supportResistanceService = supportResistanceService;
+        this.dailySignalHistoryService = dailySignalHistoryService;
     }
 
     public TradingSignal generateSignal(String symbol,
@@ -85,6 +89,7 @@ public class SignalGeneratorService {
         tradingSignal.setPivot(levels.getPivot());
         applyRiskLevels(tradingSignal);
         tradingSignal.setProximityPercent(DEFAULT_PROXIMITY_PERCENT);
+        dailySignalHistoryService.record(tradingSignal);
 
         return tradingSignal;
     }

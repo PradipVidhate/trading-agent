@@ -8,21 +8,26 @@ function Free-Port {
         [int]$Port
     )
 
-    $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
+    $connections = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if (-not $connections) {
         Write-Host "Port $Port is free."
         return
     }
 
-    $pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($pid in $pids) {
-        if ($pid -and $pid -ne 0) {
-            Write-Host "Stopping process $pid using port $Port"
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+    $processIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($processId in $processIds) {
+        if ($processId -and $processId -ne 0) {
+            $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $processId"
+            if (-not $processInfo -or $processInfo.CommandLine -notmatch 'com\.pradip\.tradingbot\.TradingAgentApplication') {
+                $processName = if ($processInfo) { $processInfo.Name } else { 'unknown process' }
+                throw "Port $Port is in use by $processName (PID $processId), not this Trading Agent. Stop it manually or choose another port."
+            }
+
+            Write-Host "Stopping existing Trading Agent process $processId on port $Port"
+            Stop-Process -Id $processId -Force -ErrorAction Stop
         }
     }
 
-    Start-Sleep -Seconds 2
     Write-Host "Port $Port has been released."
 }
 
